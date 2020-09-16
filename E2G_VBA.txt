@@ -1,0 +1,252 @@
+#If VBA7 Then
+
+Private Declare PtrSafe Function ShellExecute Lib "Shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, _
+ByVal lpOperation As String, ByVal lpFile As String, _
+ByVal lpParameters As _
+String, ByVal lpDirectory As _
+String, ByVal nShowCmd _
+            As Long) As Long
+            #Else
+            Private Declare Function ShellExecute Lib "Shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, _
+ByVal lpOperation As String, ByVal lpFile As String, _
+ByVal lpParameters As _
+String, ByVal lpDirectory As _
+String, ByVal nShowCmd _
+            As Long) As Long
+            #End If
+Const SW_SHOW = 5
+    Dim OutPutText As String
+
+Sub Generate_KML()
+
+    'On Error GoTo Err1
+    Dim varFile, varT1, varT2, varX1, varX2, varX3, varX4, varArr1(), varArr2(9)
+    varArr2(0) = "folder"
+    varArr2(1) = "name"
+    varArr2(2) = "latitude"
+    varArr2(3) = "longitude"
+    varArr2(4) = "altitude"
+    varArr2(5) = "range"
+    varArr2(6) = "tilt"
+    varArr2(7) = "heading"
+    varArr2(8) = "icon"
+    varArr2(9) = "description"
+    Range("B4").Select
+    varX1 = 1
+    varX2 = -1
+    varX3 = -1
+    varX4 = 0
+    While ActiveCell.Offset(0, varX1).Value <> ""
+        If LCase(ActiveCell.Offset(0, varX1).Value) = varArr2(1) Then
+            varX3 = varX1 - 1
+            While ActiveCell.Offset(varX2 + 1, varX1).Value <> ""
+                varX2 = varX2 + 1
+            Wend
+        End If
+        If LCase(ActiveCell.Offset(0, varX1).Value) = varArr2(2) Then varX4 = varX4 + 1
+        If LCase(ActiveCell.Offset(0, varX1).Value) = varArr2(3) Then varX4 = varX4 + 2
+        varX1 = varX1 + 1
+    Wend
+    varX1 = varX1 - 2
+    varX2 = varX2 - 1
+    varT1 = ""
+        Set varTemp = [Sites!H2]
+[Q2] = "Last kml: " & varX1 + 1 & " column, " & varX2 + 1 & " row / name is in column " & varX3 + 1
+    ReDim varArr1(varX2 + 1, UBound(varArr2))
+    varX1 = 1
+    While ActiveCell.Offset(0, varX1).Value <> ""
+        varT1 = LCase(ActiveCell.Offset(0, varX1).Value)
+        varX3 = -1
+        varT2 = ""
+        For varX2 = 0 To UBound(varArr2)
+            If varT1 = varArr2(varX2) Then varX3 = varX2
+            If varT1 = varArr2(varX2) Then Exit For
+        Next
+        If varX3 <> -1 Then
+            If varT1 = varArr2(1) Or varT1 = varArr2(2) Or varT1 = varArr2(3) Then
+                varX4 = varX3
+            Else
+                If LCase(ActiveCell.Offset(-1, varX1).Value) = "" Then varX4 = -1 Else varX4 = varX3
+            End If
+        Else
+            If LCase(ActiveCell.Offset(-1, varX1).Value) = "" Then
+                varX4 = -1
+            Else
+                varX4 = UBound(varArr2)
+                varT2 = varT1 & ": "
+            End If
+        End If
+        If varX4 <> -1 Then
+            If varT2 = "" Then varArr1(0, varX4) = varT1 Else varArr1(0, varX4) = varArr2(UBound(varArr2))
+            For varX2 = 1 To UBound(varArr1, 1)
+                If varT2 = "" Then
+                    If varX4 = UBound(varArr2) Then
+                        If ActiveCell.Offset(varX2, varX1).Value <> "" Then varArr1(varX2, varX4) = ActiveCell.Offset(varX2, varX1).Value & "chr(13)" & varArr1(varX2, varX4)
+                    Else
+                        varArr1(varX2, varX4) = ActiveCell.Offset(varX2, varX1).Value
+                    End If
+                Else
+                    If ActiveCell.Offset(varX2, varX1).Value <> "" Or (ActiveCell.Offset(varX2, varX1).Value = "" And [O2] = 1) Then
+                        If varArr1(varX2, varX4) <> "" Then varArr1(varX2, varX4) = varArr1(varX2, varX4) & "Chr(13)"
+                        varArr1(varX2, varX4) = varArr1(varX2, varX4) & varT2 & ActiveCell.Offset(varX2, varX1).Value
+                    End If
+                End If
+            Next
+        End If
+        varX1 = varX1 + 1
+    Wend
+    For varX1 = 1 To UBound(varArr1, 1) - 1
+        If varArr1(varX1, 0) > varArr1(varX1 + 1, 0) Then
+            For varX2 = 0 To UBound(varArr1, 2)
+                varT1 = varArr1(varX1, varX2)
+                varArr1(varX1, varX2) = varArr1(varX1 + 1, varX2)
+                varArr1(varX1 + 1, varX2) = varT1
+            Next
+            varX1 = 0
+        End If
+    Next
+    '================================================================================================================================
+'Range("C13").Select
+'For varX1 = 0 To UBound(varArr1, 1)
+'For varX2 = 0 To UBound(varArr1, 2)
+'ActiveCell.Offset(varX1, varX2) = varArr1(varX1, varX2)
+'Next
+'MsgBox AscW(Left(varArr1(varX1, 1), 1)) & "    / " & varArr1(varX1, 1)
+'Next
+    '================================================================================================================================
+    varT1 = ""
+Dim bUnicodeSignature(1 To 2) As Byte, bResString() As Byte, ResString As String
+    Dim varX00, varX01 As Long
+    varX00 = 0
+    varX01 = 0
+Close
+    'Kill [h2] & ".kml"
+    'Open [h2] & ".kml" For Output As #1
+Set fs = CreateObject("Scripting.FileSystemObject")
+Set a = fs.CreateTextFile([H2] & ".kml", True, True)
+        'a.WriteLine (Chr(239) & Chr(187) & Chr(191))
+        a.writeline ("<?xml version='1.0' encoding='UTF-8'?>")
+        a.writeline ("<kml xmlns='http://earth.google.com/kml/2.1'>")
+        a.writeline ("<Folder id='layer fmain'>")
+        a.writeline ("<name>" & [g2] & "</name>")
+        a.writeline ("<visibility>0</visibility>")
+        a.writeline ("<open>0</open>")
+        For varX1 = 1 To UBound(varArr1, 1)
+            If varArr1(varX1, 0) <> "" And varArr1(varX1, 0) <> varT1 Then
+                varTemp1 = Split(varT1, "/")
+                varTemp2 = Split(varArr1(varX1, 0), "/")
+                varX3 = UBound(varTemp1)
+                If UBound(varTemp2) < UBound(varTemp1) Then varX3 = UBound(varTemp2)
+                varX4 = -1
+                For varX2 = 0 To varX3
+                    If varTemp1(varX2) <> varTemp2(varX2) Then varX4 = varX2
+                    If varTemp1(varX2) <> varTemp2(varX2) Then Exit For
+                Next
+                If varX4 <> -1 Then
+                    For varX2 = varX4 To UBound(varTemp1)
+                        a.writeline ("</Folder>")
+                    Next
+                    For varX2 = varX4 To UBound(varTemp2)
+                        varX00 = varX00 + 1
+                        a.writeline ("<Folder id='layer" & varX00 & "'>")
+                        a.writeline ("<name>" & varTemp2(varX2) & "</name>")
+                        a.writeline ("<visibility>0</visibility>")
+                        a.writeline ("<open>0</open>")
+                    Next
+                Else
+                    If UBound(varTemp2) < UBound(varTemp1) Then
+                        For varX2 = varX3 + 1 To UBound(varTemp1)
+                            a.writeline ("</Folder>")
+                        Next
+                    Else
+                        For varX2 = varX3 + 1 To UBound(varTemp2)
+                            varX00 = varX00 + 1
+                            a.writeline ("<Folder id='layer" & varX00 & "'>")
+                            a.writeline ("<name>" & varTemp2(varX2) & "</name>")
+                            a.writeline ("<visibility>0</visibility>")
+                            a.writeline ("<open>0</open>")
+                        Next
+                    End If
+                End If
+            End If
+            varX01 = varX01 + 1
+            a.writeline ("<Placemark id='layer p" & varX01 & "'>")
+If varArr1(varX1, 8) = "" Then varArr1(varX1, 8) = "http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png"
+            a.writeline ("<StyleMap id='myicon_" & varX01 & "'>")
+            a.writeline (" <Pair>")
+            a.writeline ("  <key>normal</key>")
+            a.writeline ("  <styleUrl>#sn_" & varX01 & "_1</styleUrl>")
+            a.writeline (" </Pair>")
+            a.writeline (" <Pair>")
+            a.writeline ("  <key>highlight</key>")
+            a.writeline ("  <styleUrl>#sh_" & varX01 & "_2</styleUrl>")
+            a.writeline (" </Pair>")
+            a.writeline ("</StyleMap>")
+            a.writeline ("<Style id='sn_" & varX01 & "'>")
+            a.writeline ("  <IconStyle>")
+            a.writeline ("  <scale>1.1</scale>")
+            a.writeline ("  <Icon>" & varArr1(varX1, 8) & "</Icon>")
+            a.writeline (" </IconStyle>")
+            a.writeline (" <ListStyle>")
+            a.writeline (" </ListStyle>")
+            a.writeline ("</Style>")
+            a.writeline ("<Style id='sh_" & varX01 & "'>")
+            a.writeline ("  <IconStyle>")
+            a.writeline ("  <scale>1.3</scale>")
+            a.writeline ("  <Icon>" & varArr1(varX1, 8) & "</Icon>")
+            a.writeline (" </IconStyle>")
+            a.writeline (" <ListStyle>")
+            a.writeline (" </ListStyle>")
+            a.writeline ("</Style>")
+            a.writeline ("<name>" & varArr1(varX1, 1) & "</name>")
+            a.writeline ("<visibility>0</visibility>")
+            a.writeline ("<Snippet maxLines='0' id='s" & varX01 & "'>")
+            a.writeline ("</Snippet>")
+            a.writeline ("<description>")
+            a.writeline ("<![CDATA[")
+            varArr1(varX1, 9) = Replace(varArr1(varX1, 9), "Chr(13)", "<br>", 1, -1, vbTextCompare)
+            varArr1(varX1, 9) = Replace(varArr1(varX1, 9), "<br><br>", "<br>", 1, -1, vbTextCompare)
+            If Right(varArr1(varX1, 9), 4) = "<br>" Then varArr1(varX1, 9) = Left(varArr1(varX1, 9), Len(varArr1(varX1, 9)) - 4)
+            If Left(varArr1(varX1, 9), 4) = "<br>" Then varArr1(varX1, 9) = Mid(varArr1(varX1, 9), 5)
+            a.writeline (varArr1(varX1, 9))
+            a.writeline ("]]>")
+            a.writeline ("</description>")
+            a.writeline ("<LookAt>")
+If varArr1(varX1, 2) = "" Then varArr1(varX1, 2) = "0"
+If varArr1(varX1, 3) = "" Then varArr1(varX1, 3) = "0"
+If varArr1(varX1, 4) = "" Then varArr1(varX1, 4) = "0"
+If varArr1(varX1, 5) = "" Then varArr1(varX1, 5) = "1000"
+If varArr1(varX1, 6) = "" Then varArr1(varX1, 6) = "0"
+If varArr1(varX1, 7) = "" Then varArr1(varX1, 7) = "0"
+            a.writeline ("<longitude>" & Replace(varArr1(varX1, 3), ",", ".", 1, -1, vbTextCompare) & "</longitude>")
+            a.writeline ("<latitude>" & Replace(varArr1(varX1, 2), ",", ".", 1, -1, vbTextCompare) & "</latitude>")
+            a.writeline ("<altitude>" & Replace(varArr1(varX1, 4), ",", ".", 1, -1, vbTextCompare) & "</altitude>")
+            a.writeline ("<range>" & Replace(varArr1(varX1, 5), ",", ".", 1, -1, vbTextCompare) & "</range>")
+            a.writeline ("<tilt>" & Replace(varArr1(varX1, 6), ",", ".", 1, -1, vbTextCompare) & "</tilt>")
+            a.writeline ("<heading>" & Replace(varArr1(varX1, 7), ",", ".", 1, -1, vbTextCompare) & "</heading>")
+            a.writeline ("<altitudeMode>relativeToGround</altitudeMode>")
+            a.writeline ("</LookAt>")
+            a.writeline ("<styleUrl>#myicon_" & varX01 & "</styleUrl>")
+            a.writeline ("<Point>")
+            a.writeline ("<coordinates>")
+            a.writeline (Replace(varArr1(varX1, 3), ",", ".", 1, -1, vbTextCompare) & "," & Replace(varArr1(varX1, 2), ",", ".", 1, -1, vbTextCompare) & "," & Replace(varArr1(varX1, 4), ",", ".", 1, -1, vbTextCompare))
+            a.writeline ("</coordinates>")
+            a.writeline ("</Point>")
+            a.writeline ("</Placemark>")
+            varT1 = varArr1(varX1, 0)
+            varT2 = Var
+
+        Next
+        If varArr1(UBound(varArr1, 1), 0) <> "" Then
+            varTemp1 = Split(varArr1(UBound(varArr1, 1), 0), "/")
+            For varX2 = 0 To UBound(varTemp1)
+                a.writeline ("</Folder>")
+            Next
+        End If
+        a.writeline ("</Folder>")
+        a.writeline ("</kml>")
+    Close
+Exit Sub
+Err1:
+    varT1 = MsgBox("The driver in [h2] is possibly not ready or the file path and name in [h2] is not valid for the OS or the file is left open." & Chr(13) & "kml not created.", vbCritical, "Error")
+End Sub
